@@ -1,8 +1,12 @@
 {
   "manifest_version": 2,
   "name": "Toggl Button on Habitify",
-  "browser_action": {
-    "default_icon": "icon.png"
+  "version": "0.0.1",
+  "icons": {
+    "32": "icon32.png",
+    "64": "icon64.png",
+    "128": "icon128.png",
+    "256": "icon256.png"
   },
   "background": {
     "scripts": ["background.js"],
@@ -10,9 +14,9 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://app.habitify.me/"],
+      "matches": ["https://app.habitify.me/*"],
       "js": ["content.js"]
     }
   ],
-  "permissions": ["storage"]
+  "permissions": ["tabs", "storage", "https://api.track.toggl.com/*"]
 }
