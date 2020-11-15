@@ -14,17 +14,17 @@ async function verifyTogglApiToken(token: string) {
 }
 
 const projectMap = new Map<string, Project>();
-async function makeGetProjectByName(token: string) {
-  if (projectMap.size === 0) {
-    const apis = await makeApis(token);
-    const workspaces = await apis.getWorkspaces();
-    workspaces.forEach(async (workspace) => {
-      const projects = await apis.getWorkspaceProjects(workspace.id);
-      projects.forEach((project) => {
-        projectMap.set(project.name, project);
-      });
+async function initializeProjectMap(token: string) {
+  const apis = await makeApis(token);
+  const workspaces = await apis.getWorkspaces();
+  workspaces.forEach(async (workspace) => {
+    const projects = await apis.getWorkspaceProjects(workspace.id);
+    projects.forEach((project) => {
+      projectMap.set(project.name, project);
     });
-  }
+  });
+}
+async function makeGetProjectByName() {
   return (name: string) => projectMap.get(name);
 }
 
@@ -83,8 +83,8 @@ browser.runtime.onMessage.addListener(async (message: Message) => {
   if (message.type === "verify") {
     const token = (await browser.storage.local.get(KEY))[KEY];
     if (typeof token !== "string") return false;
-    if (verifyTogglApiToken(token)) {
-      makeGetProjectByName(token);
+    if (await verifyTogglApiToken(token)) {
+      await initializeProjectMap(token);
       return true;
     }
     return false;
@@ -93,7 +93,7 @@ browser.runtime.onMessage.addListener(async (message: Message) => {
   } else if (message.type === "timer") {
     const token = (await browser.storage.local.get(KEY))[KEY];
     if (typeof token !== "string") return false;
-    const getProjectByName = await makeGetProjectByName(token);
+    const getProjectByName = await makeGetProjectByName();
     const apis = await makeApis(token);
     await apis.startTimer(
       message.description,
