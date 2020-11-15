@@ -95,10 +95,13 @@ browser.runtime.onMessage.addListener(async (message: Message) => {
     if (typeof token !== "string") return false;
     const getProjectByName = await makeGetProjectByName();
     const apis = await makeApis(token);
-    await apis.startTimer(
+    const project = getProjectByName(message.project);
+    console.log(
+      "startTimer:",
       message.description,
-      getProjectByName(message.project)?.id
+      `(${project?.id}: ${message.project})`
     );
+    await apis.startTimer(message.description, project?.id);
     return true;
   }
 });

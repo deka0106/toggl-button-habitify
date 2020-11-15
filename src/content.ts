@@ -69,6 +69,7 @@ async function initializeEventListener() {
         $toggl.className = "action-item";
         $toggl.textContent = "Toggl";
         $toggl.addEventListener("click", async () => {
+          console.log("startTimer:", habit, `(${category})`);
           await startTimer(habit, category);
         });
         $actions.appendChild($toggl);
