@@ -1,19 +1,31 @@
 interface IMessage {
   type: string;
 }
-interface VerifyMessage extends IMessage {
-  type: "verify";
+interface VerifyTogglMessage extends IMessage {
+  type: "verify_toggl";
 }
-interface TokenMessage extends IMessage {
-  type: "token";
+interface VerifyHabitifyMessage extends IMessage {
+  type: "verify_habitify";
+}
+interface TokenTogglMessage extends IMessage {
+  type: "token_toggl";
+  token: string;
+}
+interface TokenHabitifyMessage extends IMessage {
+  type: "token_habitify";
   token: string;
 }
 interface TimerMessage extends IMessage {
   type: "timer";
   description: string;
-  project: string;
+  habit: string;
 }
-type Message = VerifyMessage | TokenMessage | TimerMessage;
+type Message =
+  | VerifyTogglMessage
+  | VerifyHabitifyMessage
+  | TokenTogglMessage
+  | TokenHabitifyMessage
+  | TimerMessage;
 
 declare module "toggl" {
   interface Response<T> {
@@ -57,5 +69,36 @@ declare module "toggl" {
     duration: number;
     description: string;
     tags: string[];
+  }
+}
+
+declare module "habitify" {
+  interface Habit {
+    id: string;
+    name: string;
+    is_archived: boolean;
+    start_date: string; // Date
+    time_of_day: TimeOfDay;
+    area_id?: string;
+    recurrence: string;
+    created_date: string; // Date
+    goal?: object; // Goal
+    log_method: string; // LogMethod
+    priority: number;
+    status?: object; // Status
+    progress?: object;
+  }
+
+  interface Area {
+    id: string;
+    name: string;
+    created_date: string; // Date
+  }
+
+  enum TimeOfDay {
+    morning = "morning",
+    evening = "evening",
+    afternoon = "afternoon",
+    any_time = "any_time",
   }
 }

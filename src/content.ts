@@ -1,86 +1,112 @@
+import { debounce } from "ts-debounce";
 import { browser } from "webextension-polyfill-ts";
-
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+import { wait } from "./utils";
 
 async function verifyTogglApiToken() {
   while (true) {
     const isVerified = await browser.runtime.sendMessage({
-      type: "verify",
-    } as VerifyMessage);
+      type: "verify_toggl",
+    } as VerifyTogglMessage);
     if (isVerified) break;
 
     const token = prompt("Input Toggl API Token") ?? "";
-    await browser.runtime.sendMessage({ type: "token", token } as TokenMessage);
+    await browser.runtime.sendMessage({
+      type: "token_toggl",
+      token,
+    } as TokenTogglMessage);
   }
 }
 
-async function makeGetCategoryByHabit() {
-  const map = new Map<string, string>();
+async function verifyHabitifyApiToken() {
+  while (true) {
+    const isVerified = await browser.runtime.sendMessage({
+      type: "verify_habitify",
+    } as VerifyHabitifyMessage);
+    if (isVerified) break;
 
-  // wait for loading
-  await sleep(3000);
-
-  // open category modal
-  document
-    .querySelector(".scroll-left > li:nth-child(7) > a")
-    ?.dispatchEvent(new MouseEvent("click"));
-
-  await sleep(500);
-  const $categories = document.querySelectorAll(".modal-body > div");
-  $categories.forEach(($category) => {
-    const category = $category.querySelector<HTMLInputElement>("form > input")
-      ?.value;
-    const $habits = $category.querySelectorAll(".list-group-item");
-    $habits.forEach(($habit) => {
-      const habit = $habit.textContent?.trim();
-      if (habit && category) map.set(habit, category);
-    });
-  });
-
-  // close category modal
-  document.querySelector(".btn-close")?.dispatchEvent(new MouseEvent("click"));
-
-  return (habit: string) => map.get(habit);
+    const token = prompt("Input Habitify API Token") ?? "";
+    await browser.runtime.sendMessage({
+      type: "token_habitify",
+      token,
+    } as TokenHabitifyMessage);
+  }
 }
 
-async function startTimer(description: string, project: string) {
+async function startTimer(description: string, habit: string) {
   await browser.runtime.sendMessage({
     type: "timer",
     description,
-    project,
+    habit,
   } as TimerMessage);
 }
 
-async function initializeEventListener() {
-  const getCategoryByHabit = await makeGetCategoryByHabit();
+function appendTogglButtonStyle() {
+  const style = document.createElement("style");
+  const css = `
+.toggl-button {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  right: 30px;
+  background: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMiIgaGVpZ2h0PSIxNiI+PHBhdGggZD0iTTAgMkMwIC45LjguNSAxLjcgMWw5LjYgNmMuOS41LjkgMS41IDAgMmwtOS42IDZjLS45LjUtMS43LjEtMS43LTFWMnoiIGZpbGw9IiM5NTg5OWIiLz48L3N2Zz4=") 55% 50% / 20px no-repeat;
+  opacity: 0.2;
+}
+.toggl-button:hover {
+  opacity: 0.8;
+}
+`;
+  style.append(document.createTextNode(css));
+  document.getElementsByTagName("head")[0].appendChild(style);
+}
 
-  const $list = document.getElementById("dashboard-habit-list");
-  if (!$list) throw "#dashboard-habit-list is not found";
+function createTogglButton(onclick: (e: MouseEvent) => void) {
+  const button = document.createElement("div");
+  button.className = "toggl-button";
+  button.onclick = onclick;
+  return button;
+}
 
-  const appendTogglButtons = () => {
-    const $habits = $list.querySelectorAll(".habit-item");
-    $habits.forEach(($habit) => {
-      const habit = $habit.querySelector(".habit-name")?.textContent?.trim();
-      if (!habit) return;
-      const category = getCategoryByHabit(habit) ?? "";
-      const $actions = $habit.querySelector(".habit-actions");
-      if ($actions && $actions.children.length <= 3) {
-        const $toggl = document.createElement("span");
-        $toggl.className = "action-item";
-        $toggl.textContent = "Toggl";
-        $toggl.addEventListener("click", async () => {
-          console.log("startTimer:", habit, `(${category})`);
-          await startTimer(habit, category);
-        });
-        $actions.appendChild($toggl);
+async function initialize() {
+  appendTogglButtonStyle();
+
+  const $main = await wait(() => document.querySelector(".v-main__wrap"));
+
+  const appendTogglButtons = debounce(() => {
+    const $items = document.querySelectorAll<HTMLLinkElement>(
+      ".journal-habit-item__content"
+    );
+    for (const $item of $items) {
+      for (const $btn of $item.querySelectorAll(".toggl-button")) {
+        $btn.remove();
       }
-    });
-  };
-  appendTogglButtons();
-  $list.addEventListener("DOMSubtreeModified", appendTogglButtons);
+      $item.prepend(
+        createTogglButton((e) => {
+          e.preventDefault();
+          const description =
+            $item.querySelector(".journal-habit-name")?.textContent ?? "";
+          const habit = $item.href.substring($item.href.lastIndexOf("/") + 1);
+          startTimer(description, habit);
+        })
+      );
+    }
+  }, 100);
+
+  const setupObserverOnContainer = debounce(async () => {
+    const $container = await wait(() =>
+      document.querySelector(".v-virtual-scroll__container")
+    );
+    const observer = new MutationObserver(appendTogglButtons);
+    observer.observe($container, { childList: true });
+    appendTogglButtons();
+  });
+
+  const observer = new MutationObserver(setupObserverOnContainer);
+  observer.observe($main, { childList: true });
+  setupObserverOnContainer();
 }
 
 (async () => {
   await verifyTogglApiToken();
-  await initializeEventListener();
+  await verifyHabitifyApiToken();
+  await initialize();
 })();

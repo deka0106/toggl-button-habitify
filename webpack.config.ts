@@ -3,6 +3,7 @@ import path from "path";
 import CopyWebpackPlugin from "copy-webpack-plugin";
 
 const config: Configuration = {
+  mode: "production",
   entry: {
     background: path.join(__dirname, "src", "background.ts"),
     content: path.join(__dirname, "src", "content.ts"),

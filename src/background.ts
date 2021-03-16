@@ -1,103 +1,99 @@
+import { Area } from "habitify";
 import { Project, Response, TimeEntry, Workspace } from "toggl";
 import { browser } from "webextension-polyfill-ts";
+import { useHabitify, verifyHabitifyApiToken } from "./habitify";
+import { useToggl, verifyTogglApiToken } from "./toggl";
 
-const TOGGL_API_URL = "https://api.track.toggl.com/api/v8";
-const KEY = "toggl_api_token";
-
-async function verifyTogglApiToken(token: string) {
-  const result = await fetch(`${TOGGL_API_URL}/me`, {
-    headers: {
-      Authorization: `Basic ${btoa(`${token}:api_token`)}`,
-    },
-  });
-  return result.status === 200;
-}
+const TOGGL_KEY = "toggl_api_token";
+const HABITIFY_KEY = "habitify_api_token";
 
 const projectMap = new Map<string, Project>();
-async function makeGetProjectByName(token: string) {
+async function getProjectByName(name: string) {
   if (projectMap.size === 0) {
-    const apis = await makeApis(token);
-    const workspaces = await apis.getWorkspaces();
+    const toggl = await useToggl(await getTogglApiToken());
+    const workspaces = await toggl.getWorkspaces();
     for (const workspace of workspaces) {
-      const projects = await apis.getWorkspaceProjects(workspace.id);
+      const projects = await toggl.getWorkspaceProjects(workspace.id);
       for (const project of projects) {
         projectMap.set(project.name, project);
       }
     }
   }
-  return (name: string) => projectMap.get(name);
+  return projectMap.get(name);
 }
 
-async function makeApis(token: string) {
-  const headers = {
-    Authorization: `Basic ${btoa(`${token}:api_token`)}`,
-  };
-  const get = async (path: string) =>
-    await fetch(`${TOGGL_API_URL}${path}`, { headers: { ...headers } });
-  const post = async (path: string, body?: string) => {
-    return await fetch(`${TOGGL_API_URL}${path}`, {
-      method: "POST",
-      headers: {
-        ...headers,
-        "Content-Type": "application/json",
-      },
-      body,
-    });
-  };
+const areaMap = new Map<string, Area>();
+async function getAreaById(id: string) {
+  if (areaMap.size === 0) {
+    const habitify = await useHabitify(await getHabitifyApiToken());
+    const areas = await habitify.getAreas();
+    for (const area of areas) {
+      areaMap.set(area.id, area);
+    }
+  }
+  return areaMap.get(id);
+}
 
-  const getWorkspaces: () => Promise<Workspace[]> = async () => {
-    return (await get("/workspaces")).json();
-  };
-  const getWorkspaceProjects: (id: number) => Promise<Project[]> = async (
-    id
-  ) => {
-    return (await get(`/workspaces/${id}/projects`)).json();
-  };
-  const startTimer: (
-    description: string,
-    pid?: number
-  ) => Promise<Response<TimeEntry>> = async (description, pid) => {
-    return (
-      await post(
-        "/time_entries/start",
-        JSON.stringify({
-          time_entry: {
-            description,
-            pid,
-            created_with: "habitify",
-            tags: [],
-          },
-        })
-      )
-    ).json();
-  };
+async function getTogglApiToken() {
+  const token = (await browser.storage.local.get(TOGGL_KEY))[TOGGL_KEY];
+  if (typeof token !== "string") throw "Toggl API Token is empty";
+  return token;
+}
 
-  return {
-    getWorkspaces,
-    getWorkspaceProjects,
-    startTimer,
-  };
+async function getHabitifyApiToken() {
+  const token = (await browser.storage.local.get(HABITIFY_KEY))[HABITIFY_KEY];
+  if (typeof token !== "string") throw "Habitify API Token is empty";
+  return token;
+}
+
+async function processVerifyTogglMessage(_: VerifyTogglMessage) {
+  try {
+    return await verifyTogglApiToken(await getTogglApiToken());
+  } catch {
+    return false;
+  }
+}
+
+async function processVerifyHabitifyMessage(_: VerifyHabitifyMessage) {
+  try {
+    return await verifyHabitifyApiToken(await getHabitifyApiToken());
+  } catch {
+    return false;
+  }
+}
+
+async function processTokenTogglMessage(message: TokenTogglMessage) {
+  return await browser.storage.local.set({ [TOGGL_KEY]: message.token });
+}
+
+async function processTokenHabitifyMessage(message: TokenHabitifyMessage) {
+  return await browser.storage.local.set({ [HABITIFY_KEY]: message.token });
+}
+
+async function processTimerMessage(message: TimerMessage) {
+  const habitify = await useHabitify(await getHabitifyApiToken());
+  const habit = await habitify.getHabit(message.habit);
+  const area = await getAreaById(habit.area_id ?? "");
+  const project = await getProjectByName(area?.name ?? "");
+  console.log(
+    "startTimer:",
+    message.description,
+    `(${project?.id}: ${area?.name})`
+  );
+  const toggl = await useToggl(await getTogglApiToken());
+  return await toggl.startTimer(message.description, project?.id);
 }
 
 browser.runtime.onMessage.addListener(async (message: Message) => {
-  if (message.type === "verify") {
-    const token = (await browser.storage.local.get(KEY))[KEY];
-    if (typeof token !== "string") return false;
-    return await verifyTogglApiToken(token);
-  } else if (message.type === "token") {
-    await browser.storage.local.set({ [KEY]: message.token });
+  if (message.type === "verify_toggl") {
+    return await processVerifyTogglMessage(message);
+  } else if (message.type === "verify_habitify") {
+    return await processVerifyHabitifyMessage(message);
+  } else if (message.type === "token_toggl") {
+    return await processTokenTogglMessage(message);
+  } else if (message.type === "token_habitify") {
+    return await processTokenHabitifyMessage(message);
   } else if (message.type === "timer") {
-    const token = (await browser.storage.local.get(KEY))[KEY];
-    if (typeof token !== "string") return false;
-    const getProjectByName = await makeGetProjectByName(token);
-    const apis = await makeApis(token);
-    const project = getProjectByName(message.project);
-    console.log(
-      "startTimer:",
-      message.description,
-      `(${project?.id}: ${message.project})`
-    );
-    await apis.startTimer(message.description, project?.id);
-    return true;
+    return await processTimerMessage(message);
   }
 });
