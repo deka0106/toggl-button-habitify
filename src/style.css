@@ -1,0 +1,13 @@
+.toggl-button {
+  position: absolute;
+  width: 64px;
+  height: 64px;
+  right: 30px;
+  background: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMiIgaGVpZ2h0PSIxNiI+PHBhdGggZD0iTTAgMkMwIC45LjguNSAxLjcgMWw5LjYgNmMuOS41LjkgMS41IDAgMmwtOS42IDZjLS45LjUtMS43LjEtMS43LTFWMnoiIGZpbGw9IiM5NTg5OWIiLz48L3N2Zz4=")
+    55% 50% / 20px no-repeat;
+  opacity: 0;
+}
+
+.toggl-button:hover {
+  opacity: 0.8;
+}
