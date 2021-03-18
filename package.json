@@ -5,7 +5,7 @@
   "scripts": {
     "watch": "webpack --watch",
     "build": "webpack",
-    "package": "crx pack dist -o release/$npm_package_name-$npm_package_version.crx",
+    "package": "zip -r release/$npm_package_name-$npm_package_version.zip dist",
     "release": "run-s build package"
   },
   "author": "Deka",
