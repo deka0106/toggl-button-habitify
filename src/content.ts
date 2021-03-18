@@ -49,17 +49,11 @@ function createTogglButton(onclick: (e: MouseEvent) => void) {
 }
 
 const appendTogglButtons = debounce(async () => {
-  const $items = await wait(() => {
-    const tmp = document.querySelectorAll<HTMLLinkElement>(
-      ".journal-habit-item__content"
-    );
-    return tmp ? tmp : null;
-  });
-
+  const $items = document.querySelectorAll<HTMLLinkElement>(
+    ".journal-habit-item__content"
+  );
   for (const $item of $items) {
-    for (const $btn of $item.querySelectorAll(".toggl-button")) {
-      $btn.remove();
-    }
+    if ($item.querySelector(".toggl-button")) continue;
     $item.prepend(
       createTogglButton((e) => {
         e.preventDefault();
