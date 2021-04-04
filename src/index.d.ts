@@ -79,7 +79,11 @@ declare module "habitify" {
     is_archived: boolean;
     start_date: string; // Date
     time_of_day: TimeOfDay;
-    area_id?: string;
+    area?: {
+      id: string;
+      name: string;
+      priority: string;
+    };
     recurrence: string;
     created_date: string; // Date
     goal?: object; // Goal

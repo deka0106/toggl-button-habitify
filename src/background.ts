@@ -1,5 +1,4 @@
-import { Area } from "habitify";
-import { Project, Response, TimeEntry, Workspace } from "toggl";
+import { Project } from "toggl";
 import { browser } from "webextension-polyfill-ts";
 import { useHabitify, verifyHabitifyApiToken } from "./habitify";
 import { useToggl, verifyTogglApiToken } from "./toggl";
@@ -20,18 +19,6 @@ async function getProjectByName(name: string) {
     }
   }
   return projectMap.get(name);
-}
-
-const areaMap = new Map<string, Area>();
-async function getAreaById(id: string) {
-  if (areaMap.size === 0) {
-    const habitify = await useHabitify(await getHabitifyApiToken());
-    const areas = await habitify.getAreas();
-    for (const area of areas) {
-      areaMap.set(area.id, area);
-    }
-  }
-  return areaMap.get(id);
 }
 
 async function getTogglApiToken() {
@@ -73,12 +60,11 @@ async function processTokenHabitifyMessage(message: TokenHabitifyMessage) {
 async function processTimerMessage(message: TimerMessage) {
   const habitify = await useHabitify(await getHabitifyApiToken());
   const habit = await habitify.getHabit(message.habit);
-  const area = await getAreaById(habit.area_id ?? "");
-  const project = await getProjectByName(area?.name ?? "");
+  const project = await getProjectByName(habit?.area?.name ?? "");
   console.log(
     "startTimer:",
     message.description,
-    `(${project?.id}: ${area?.name})`
+    `(${project?.id}: ${habit?.area?.name})`
   );
   const toggl = await useToggl(await getTogglApiToken());
   return await toggl.startTimer(message.description, project?.id);
