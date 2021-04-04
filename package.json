@@ -1,6 +1,6 @@
 {
   "name": "toggl-button-habitify",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Toggl Button on Habitify",
   "scripts": {
     "watch": "webpack --watch",
