@@ -71,7 +71,7 @@ const setupObserverOnContainer = debounce(async () => {
     document.querySelector(".v-virtual-scroll__container")
   );
   const observer = new MutationObserver(appendTogglButtons);
-  observer.observe($container, { childList: true });
+  observer.observe($container, { childList: true, subtree: true });
   appendTogglButtons();
 });
 
