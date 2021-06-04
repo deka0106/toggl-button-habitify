@@ -73,6 +73,13 @@ declare module "toggl" {
 }
 
 declare module "habitify" {
+  interface Response<T> {
+    message: string;
+    status: boolean;
+    version: string;
+    data: T;
+  }
+
   interface Habit {
     id: string;
     name: string;

@@ -59,7 +59,7 @@ async function processTokenHabitifyMessage(message: TokenHabitifyMessage) {
 
 async function processTimerMessage(message: TimerMessage) {
   const habitify = await useHabitify(await getHabitifyApiToken());
-  const habit = await habitify.getHabit(message.habit);
+  const habit = (await habitify.getHabit(message.habit)).data;
   const project = await getProjectByName(habit?.area?.name ?? "");
   console.log(
     "startTimer:",
