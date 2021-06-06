@@ -41,6 +41,24 @@ async function startTimer(description: string, habit: string) {
   } as TimerMessage);
 }
 
+async function getRoot() {
+  return wait(() => document.querySelector("#root"));
+}
+
+async function getHabitContainers() {
+  const todo = await wait(() =>
+    document.querySelector<HTMLElement>(
+      "#root > div > div.css-76h34y > div.css-y3isu0 > div.css-1mwek1r > div.css-0"
+    )
+  );
+  const done = await wait(() =>
+    document.querySelector<HTMLElement>(
+      "#root > div > div.css-76h34y > div.css-y3isu0 > div.css-1mwek1r > div:nth-child(4) > div > div.chakra-collapse > div"
+    )
+  );
+  return [todo, done];
+}
+
 function createTogglButton(onclick: (e: MouseEvent) => void) {
   const button = document.createElement("div");
   button.className = "toggl-button";
@@ -48,38 +66,49 @@ function createTogglButton(onclick: (e: MouseEvent) => void) {
   return button;
 }
 
-const appendTogglButtons = debounce(async () => {
-  const $items = document.querySelectorAll<HTMLLinkElement>(
-    ".journal-habit-item__content"
+function appendTogglButton($item: HTMLElement) {
+  if ($item.querySelector(".toggl-button")) return;
+  const $info = $item.querySelector(".item-habit-info");
+  $info?.append(
+    createTogglButton((e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const habit = $item.querySelector(":scope > div")?.id;
+      const description = $item.querySelector(
+        ".item-habit-info .chakra-text"
+      )?.textContent;
+      if (!habit || !description) {
+        console.log("Failed to get habit or description: ", habit, description);
+        return;
+      }
+      startTimer(description, habit);
+    })
   );
-  for (const $item of $items) {
-    if ($item.querySelector(".toggl-button")) continue;
-    $item.prepend(
-      createTogglButton((e) => {
-        e.preventDefault();
-        const description =
-          $item.querySelector(".journal-habit-name")?.textContent ?? "";
-        const habit = $item.href.substring($item.href.lastIndexOf("/") + 1);
-        startTimer(description, habit);
-      })
-    );
+}
+
+const appendTogglButtons = debounce(async ($containers: HTMLElement[]) => {
+  for (const $container of $containers) {
+    const $items = $container.querySelectorAll<HTMLElement>(":scope > div");
+    for (const $item of $items) {
+      appendTogglButton($item);
+    }
   }
 });
 
-const setupObserverOnContainer = debounce(async () => {
-  const $container = await wait(() =>
-    document.querySelector(".v-virtual-scroll__container")
-  );
-  const observer = new MutationObserver(appendTogglButtons);
-  observer.observe($container, { childList: true, subtree: true });
-  appendTogglButtons();
+const setupObserverOnContainers = debounce(async () => {
+  const $containers = await getHabitContainers();
+  const observer = new MutationObserver(() => appendTogglButtons($containers));
+  for (const $container of $containers) {
+    observer.observe($container, { childList: true });
+  }
+  appendTogglButtons($containers);
 });
 
 async function initialize() {
-  const $main = await wait(() => document.querySelector(".v-main__wrap"));
-  const observer = new MutationObserver(setupObserverOnContainer);
-  observer.observe($main, { childList: true });
-  setupObserverOnContainer();
+  const $root = await getRoot();
+  const observer = new MutationObserver(setupObserverOnContainers);
+  observer.observe($root, { childList: true });
+  setupObserverOnContainers();
 }
 
 (async () => {
