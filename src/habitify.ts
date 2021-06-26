@@ -2,16 +2,16 @@ import { Response, Area, Habit } from "habitify";
 
 const HABITIFY_API_URL = "https://api.habitify.me";
 
-export async function verifyHabitifyApiToken(token: string) {
+export const verifyHabitifyApiToken = async (token: string) => {
   const result = await fetch(`${HABITIFY_API_URL}/areas`, {
     headers: {
       Authorization: token,
     },
   });
   return result.status === 200;
-}
+};
 
-export function useHabitify(token: string) {
+export const useHabitify = (token: string) => {
   const headers = {
     Authorization: token,
   };
@@ -29,4 +29,4 @@ export function useHabitify(token: string) {
     getAreas,
     getHabit,
   };
-}
+};

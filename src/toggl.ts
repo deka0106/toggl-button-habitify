@@ -2,16 +2,16 @@ import { Response, Project, TimeEntry, Workspace } from "toggl";
 
 const TOGGL_API_URL = "https://api.track.toggl.com/api/v8";
 
-export async function verifyTogglApiToken(token: string) {
+export const verifyTogglApiToken = async (token: string) => {
   const result = await fetch(`${TOGGL_API_URL}/me`, {
     headers: {
       Authorization: `Basic ${btoa(`${token}:api_token`)}`,
     },
   });
   return result.status === 200;
-}
+};
 
-export function useToggl(token: string) {
+export const useToggl = (token: string) => {
   const headers = {
     Authorization: `Basic ${btoa(`${token}:api_token`)}`,
   };
@@ -60,4 +60,4 @@ export function useToggl(token: string) {
     getWorkspaceProjects,
     startTimer,
   };
-}
+};

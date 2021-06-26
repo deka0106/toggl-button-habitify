@@ -1,9 +1,9 @@
 import { debounce } from "ts-debounce";
 import { browser } from "webextension-polyfill-ts";
-import { wait } from "./utils";
+import { notNull, retry } from "./utils";
 import "./style.css";
 
-async function verifyTogglApiToken() {
+const verifyTogglApiToken = async () => {
   while (true) {
     const isVerified = await browser.runtime.sendMessage({
       type: "verify_toggl",
@@ -16,9 +16,9 @@ async function verifyTogglApiToken() {
       token,
     } as TokenTogglMessage);
   }
-}
+};
 
-async function verifyHabitifyApiToken() {
+const verifyHabitifyApiToken = async () => {
   while (true) {
     const isVerified = await browser.runtime.sendMessage({
       type: "verify_habitify",
@@ -31,42 +31,50 @@ async function verifyHabitifyApiToken() {
       token,
     } as TokenHabitifyMessage);
   }
-}
+};
 
-async function startTimer(description: string, habit: string) {
+const startTimer = async (description: string, habit: string) => {
   await browser.runtime.sendMessage({
     type: "timer",
     description,
     habit,
   } as TimerMessage);
-}
+};
 
-async function getRoot() {
-  return wait(() => document.querySelector("#root"));
-}
+const getRoot = async () => {
+  return retry(() => document.querySelector<HTMLElement>("#root"));
+};
 
-async function getHabitContainers() {
-  const todo = await wait(() =>
+const getMainContainer = async () => {
+  return retry(() =>
+    document.querySelector<HTMLElement>(
+      "#root > div > div.css-76h34y > div.css-y3isu0 > div.css-1mwek1r"
+    )
+  );
+};
+
+const getHabitLists = async () => {
+  const todo = await retry(() =>
     document.querySelector<HTMLElement>(
       "#root > div > div.css-76h34y > div.css-y3isu0 > div.css-1mwek1r > div.css-0"
     )
   );
-  const done = await wait(() =>
+  const done = await retry(() =>
     document.querySelector<HTMLElement>(
       "#root > div > div.css-76h34y > div.css-y3isu0 > div.css-1mwek1r > div:nth-child(4) > div > div.chakra-collapse > div"
     )
   );
-  return [todo, done];
-}
+  return [todo, done].filter(notNull);
+};
 
-function createTogglButton(onclick: (e: MouseEvent) => void) {
+const createTogglButton = (onclick: (e: MouseEvent) => void) => {
   const button = document.createElement("div");
   button.className = "toggl-button";
   button.onclick = onclick;
   return button;
-}
+};
 
-function appendTogglButton($item: HTMLElement) {
+const appendTogglButton = ($item: HTMLElement) => {
   if ($item.querySelector(".toggl-button")) return;
   const $info = $item.querySelector(".item-habit-info");
   $info?.append(
@@ -84,35 +92,46 @@ function appendTogglButton($item: HTMLElement) {
       startTimer(description, habit);
     })
   );
-}
+};
 
-const appendTogglButtons = debounce(async ($containers: HTMLElement[]) => {
-  for (const $container of $containers) {
-    const $items = $container.querySelectorAll<HTMLElement>(":scope > div");
+const appendTogglButtons = debounce(async ($lists: HTMLElement[]) => {
+  for (const $list of $lists) {
+    const $items = $list.querySelectorAll<HTMLElement>(":scope > div");
     for (const $item of $items) {
       appendTogglButton($item);
     }
   }
 });
 
-const setupObserverOnContainers = debounce(async () => {
-  const $containers = await getHabitContainers();
-  const observer = new MutationObserver(() => appendTogglButtons($containers));
-  for (const $container of $containers) {
-    observer.observe($container, { childList: true });
+const setupHabitListObserver = debounce(async () => {
+  const $lists = await getHabitLists();
+  const observer = new MutationObserver(() => appendTogglButtons($lists));
+  for (const $list of $lists) {
+    observer.observe($list, { childList: true });
   }
-  appendTogglButtons($containers);
+  appendTogglButtons($lists);
 });
 
-async function initialize() {
-  const $root = await getRoot();
-  const observer = new MutationObserver(setupObserverOnContainers);
-  observer.observe($root, { childList: true });
-  setupObserverOnContainers();
-}
+const setupMainContainerObserver = debounce(async () => {
+  const $container = await getMainContainer();
+  if (!$container) return;
+  const observer = new MutationObserver(setupHabitListObserver);
+  observer.observe($container, { childList: true });
+  setupHabitListObserver();
+});
 
-(async () => {
+const setupRootObserver = debounce(async () => {
+  const $root = await getRoot();
+  if (!$root) return;
+  const observer = new MutationObserver(setupHabitListObserver);
+  observer.observe($root, { childList: true });
+  setupMainContainerObserver();
+});
+
+const initialize = async () => {
   await verifyTogglApiToken();
   await verifyHabitifyApiToken();
-  await initialize();
-})();
+  await setupRootObserver();
+};
+
+void initialize();
