@@ -1,5 +1,5 @@
 import { debounce } from "ts-debounce";
-import { browser } from "webextension-polyfill-ts";
+import browser from "webextension-polyfill";
 import { notNull, retry } from "./utils";
 import "./style.css";
 

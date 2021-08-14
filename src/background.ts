@@ -1,5 +1,5 @@
 import { Project } from "toggl";
-import { browser } from "webextension-polyfill-ts";
+import browser from "webextension-polyfill";
 import { useHabitify, verifyHabitifyApiToken } from "./habitify";
 import { useToggl, verifyTogglApiToken } from "./toggl";
 

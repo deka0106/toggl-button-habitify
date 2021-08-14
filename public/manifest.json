@@ -1,5 +1,5 @@
 {
-  "manifest_version": 2,
+  "manifest_version": 3,
   "name": "Toggl Button on Habitify",
   "description": "Puts a timer into Habitify and allows quick real time productivity tracking with all the data stored on your Toggl account",
   "version": "1.0.6",
@@ -19,5 +19,6 @@
       "js": ["content.js"]
     }
   ],
-  "permissions": ["storage", "https://api.track.toggl.com/*"]
+  "permissions": ["storage"],
+  "host_permissions": ["https://api.track.toggl.com/*"]
 }
