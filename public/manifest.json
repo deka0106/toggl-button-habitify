@@ -2,7 +2,7 @@
   "manifest_version": 2,
   "name": "Toggl Button on Habitify",
   "description": "Puts a timer into Habitify and allows quick real time productivity tracking with all the data stored on your Toggl account",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "icons": {
     "16": "icon/16.png",
     "32": "icon/32.png",
