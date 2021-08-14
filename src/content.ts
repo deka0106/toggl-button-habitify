@@ -48,7 +48,7 @@ const getRoot = async () => {
 const getMainContainer = async () => {
   return retry(() =>
     document.querySelector<HTMLElement>(
-      "#root > div > div.css-76h34y > div.css-y3isu0 > div.css-1mwek1r"
+      "#root > div.css-jdbdwd > div.css-76h34y > div.css-y3isu0 > div.css-11btfhh"
     )
   );
 };
@@ -56,12 +56,12 @@ const getMainContainer = async () => {
 const getHabitLists = async () => {
   const todo = await retry(() =>
     document.querySelector<HTMLElement>(
-      "#root > div > div.css-76h34y > div.css-y3isu0 > div.css-1mwek1r > div.css-0"
+      "#root > div.css-jdbdwd > div.css-76h34y > div.css-y3isu0 > div.css-11btfhh > div.css-0"
     )
   );
   const done = await retry(() =>
     document.querySelector<HTMLElement>(
-      "#root > div > div.css-76h34y > div.css-y3isu0 > div.css-1mwek1r > div:nth-child(4) > div > div.chakra-collapse > div"
+      "#root > div.css-jdbdwd > div.css-76h34y > div.css-y3isu0 > div.css-11btfhh > div:nth-child(4) > div.css-0 > div.chakra-collapse > div.css-0"
     )
   );
   return [todo, done].filter(notNull);
