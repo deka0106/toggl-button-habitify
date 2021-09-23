@@ -33,6 +33,15 @@ const getHabitifyApiToken = async () => {
   return token;
 };
 
+const stopCurrentTimer = async (toggl: ReturnType<typeof useToggl>) => {
+  try {
+    const entry = await toggl.getCurrentTimer();
+    await toggl.stopTimer(entry.data.id);
+  } catch {
+    // nothing
+  }
+};
+
 const processVerifyTogglMessage = async (_: VerifyTogglMessage) => {
   try {
     return await verifyTogglApiToken(await getTogglApiToken());
@@ -67,6 +76,7 @@ const processTimerMessage = async (message: TimerMessage) => {
     `(${project?.id}: ${habit?.area?.name})`
   );
   const toggl = await useToggl(await getTogglApiToken());
+  await stopCurrentTimer(toggl);
   return await toggl.startTimer(message.description, project?.id);
 };
 

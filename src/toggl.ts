@@ -27,6 +27,16 @@ export const useToggl = (token: string) => {
       body,
     });
   };
+  const put = async (path: string, body?: string) => {
+    return await fetch(`${TOGGL_API_URL}${path}`, {
+      method: "PUT",
+      headers: {
+        ...headers,
+        "Content-Type": "application/json",
+      },
+      body,
+    });
+  };
 
   const getWorkspaces: () => Promise<Workspace[]> = async () => {
     return (await get("/workspaces")).json();
@@ -54,10 +64,20 @@ export const useToggl = (token: string) => {
       )
     ).json();
   };
+  const stopTimer: (id: number) => Promise<Response<TimeEntry>> = async (
+    id
+  ) => {
+    return (await put(`/time_entries/${id}/stop`)).json();
+  };
+  const getCurrentTimer: () => Promise<Response<TimeEntry>> = async () => {
+    return (await get("/time_entries/current")).json();
+  };
 
   return {
     getWorkspaces,
     getWorkspaceProjects,
     startTimer,
+    stopTimer,
+    getCurrentTimer,
   };
 };
