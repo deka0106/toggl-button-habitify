@@ -1,11 +1,37 @@
 .toggl-button {
-  width: 36px;
-  height: 48px;
-  background: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMiIgaGVpZ2h0PSIxNiI+PHBhdGggZD0iTTAgMkMwIC45LjguNSAxLjcgMWw5LjYgNmMuOS41LjkgMS41IDAgMmwtOS42IDZjLS45LjUtMS43LjEtMS43LTFWMnoiIGZpbGw9IiM5NTg5OWIiLz48L3N2Zz4=")
-    20% 50% / 16px no-repeat;
-  opacity: 0.2;
+  grid-area: togglButton;
+  width: 32px;
+  height: 30px;
+  background-color: rgb(66, 66, 66);
+  border: 1px solid rgb(74, 74, 74);
+  border-radius: 3px;
+  margin-right: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.toggl-button:hover {
-  opacity: 0.8;
+.toggl-button::before {
+  content: "";
+  background-image: url("data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgNTEyIDUxMiI+DQogIDxwYXRoDQogICAgZmlsbD0iI2ZmZiINCiAgICBkPSJNNDU3LjQsMjE0LjdMMTA1LjQsNi42Qzc2LjgtMTAuMywzMyw2LjEsMzMsNDcuOVY0NjRjMCwzNy41LDQwLjcsNjAuMSw3Mi40LDQxLjNsMzUyLTIwOCBDNDg4LjgsMjc4LjgsNDg4LjksMjMzLjIsNDU3LjQsMjE0LjdMNDU3LjQsMjE0Ljd6Ig0KICAvPg0KPC9zdmc+DQo=");
+  background-size: contain;
+  background-repeat: no-repeat;
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+}
+
+.css-515xy0 {
+  margin-left: 0;
+}
+
+.css-1ilzoee,
+.css-4r8v4y {
+  grid-template-areas: "name togglButton smartAction otherAction";
+  grid-template-columns: 6fr auto auto auto;
+}
+
+.css-1xe4x7r {
+  grid-template-areas: "name togglButton otherAction";
+  grid-template-columns: 7fr auto auto;
 }

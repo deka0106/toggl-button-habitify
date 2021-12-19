@@ -54,29 +54,26 @@ const startTimer = async (description: string, habit: string) => {
 };
 
 const getRoot = async () => {
-  return retry(() => document.querySelector<HTMLElement>("#root"));
-};
-
-const getMainContainer = async () => {
-  return retry(() =>
-    document.querySelector<HTMLElement>(
-      "#root > div.css-jdbdwd > div.css-76h34y > div.css-y3isu0 > div.css-11btfhh"
-    )
-  );
+  return retry(() => document.querySelector<HTMLElement>("#root > div"));
 };
 
 const getHabitLists = async () => {
   const todo = await retry(() =>
     document.querySelector<HTMLElement>(
-      "#root > div.css-jdbdwd > div.css-76h34y > div.css-y3isu0 > div.css-11btfhh > div.css-0"
+      "#root > div > div.main-journal > div.css-wdd64 > div.css-11btfhh > div.css-0"
     )
   );
   const done = await retry(() =>
     document.querySelector<HTMLElement>(
-      "#root > div.css-jdbdwd > div.css-76h34y > div.css-y3isu0 > div.css-11btfhh > div:nth-child(4) > div.css-0 > div.chakra-collapse > div.css-0"
+      "#root > div > div.main-journal > div.css-wdd64 > div.css-11btfhh > div:nth-child(2) > div.css-0 > div.chakra-collapse > div.css-0"
     )
   );
-  return [todo, done].filter(notNull);
+  const skip = await retry(() =>
+    document.querySelector<HTMLElement>(
+      "#root > div > div.main-journal > div.css-wdd64 > div.css-11btfhh > div:nth-child(3) > div.css-0 > div.chakra-collapse > div.css-0"
+    )
+  );
+  return [todo, done, skip].filter(notNull);
 };
 
 const createTogglButton = (onclick: (e: MouseEvent) => void) => {
@@ -89,20 +86,19 @@ const createTogglButton = (onclick: (e: MouseEvent) => void) => {
 const appendTogglButton = ($item: HTMLElement) => {
   if ($item.querySelector(".toggl-button")) return;
   const $info = $item.querySelector(".item-habit-info");
-  $info?.append(
+  $info?.insertBefore(
     createTogglButton((e) => {
       e.preventDefault();
       e.stopPropagation();
       const habit = $item.querySelector(":scope > div")?.id;
-      const description = $item.querySelector(
-        ".item-habit-info .chakra-text"
-      )?.textContent;
+      const description = $item.querySelector(".habit-name")?.textContent;
       if (!habit || !description) {
         console.log("Failed to get habit or description: ", habit, description);
         return;
       }
       startTimer(description, habit);
-    })
+    }),
+    $item.querySelector(".css-515xy0")
   );
 };
 
@@ -124,19 +120,11 @@ const setupHabitListObserver = debounce(async () => {
   }
 });
 
-const setupMainContainerObserver = debounce(async () => {
-  setupHabitListObserver();
-  const $container = await getMainContainer();
-  if (!$container) return;
-  const observer = new MutationObserver(() => setupHabitListObserver());
-  observer.observe($container, { childList: true });
-});
-
 const setupRootObserver = debounce(async () => {
-  setupMainContainerObserver();
+  setupHabitListObserver();
   const $root = await getRoot();
   if (!$root) return;
-  const observer = new MutationObserver(() => setupMainContainerObserver());
+  const observer = new MutationObserver(() => setupHabitListObserver());
   observer.observe($root, { childList: true });
 });
 
