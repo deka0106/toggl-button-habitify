@@ -3,34 +3,46 @@ import browser from "webextension-polyfill";
 import { notNull, retry } from "./utils";
 import "./style.css";
 
-const verifyTogglApiToken = async () => {
-  while (true) {
-    const isVerified = await browser.runtime.sendMessage({
-      type: "verify_toggl",
-    } as VerifyTogglMessage);
-    if (isVerified) break;
+const RETRY_COUNT = 3;
 
+const verifyTogglApiToken = async () => {
+  const isVerified = await browser.runtime.sendMessage({
+    type: "verify_toggl",
+  } as VerifyTogglMessage);
+  if (isVerified) return;
+
+  for (let i = 0; i < RETRY_COUNT; i++) {
     const token = prompt("Input Toggl API Token") ?? "";
     await browser.runtime.sendMessage({
       type: "token_toggl",
       token,
     } as TokenTogglMessage);
+    const isVerified = await browser.runtime.sendMessage({
+      type: "verify_toggl",
+    } as VerifyTogglMessage);
+    if (isVerified) return;
   }
+  throw new Error("Failed to verify Toggl API Token");
 };
 
 const verifyHabitifyApiToken = async () => {
-  while (true) {
-    const isVerified = await browser.runtime.sendMessage({
-      type: "verify_habitify",
-    } as VerifyHabitifyMessage);
-    if (isVerified) break;
+  const isVerified = await browser.runtime.sendMessage({
+    type: "verify_habitify",
+  } as VerifyHabitifyMessage);
+  if (isVerified) return;
 
+  for (let i = 0; i < RETRY_COUNT; i++) {
     const token = prompt("Input Habitify API Token") ?? "";
     await browser.runtime.sendMessage({
       type: "token_habitify",
       token,
     } as TokenHabitifyMessage);
+    const isVerified = await browser.runtime.sendMessage({
+      type: "verify_habitify",
+    } as VerifyHabitifyMessage);
+    if (isVerified) return;
   }
+  throw new Error("Failed to verify Habitify API Token");
 };
 
 const startTimer = async (description: string, habit: string) => {
@@ -105,33 +117,37 @@ const appendTogglButtons = debounce(async ($lists: HTMLElement[]) => {
 
 const setupHabitListObserver = debounce(async () => {
   const $lists = await getHabitLists();
+  appendTogglButtons($lists);
   const observer = new MutationObserver(() => appendTogglButtons($lists));
   for (const $list of $lists) {
     observer.observe($list, { childList: true });
   }
-  appendTogglButtons($lists);
 });
 
 const setupMainContainerObserver = debounce(async () => {
+  setupHabitListObserver();
   const $container = await getMainContainer();
   if (!$container) return;
-  const observer = new MutationObserver(setupHabitListObserver);
+  const observer = new MutationObserver(() => setupHabitListObserver());
   observer.observe($container, { childList: true });
-  setupHabitListObserver();
 });
 
 const setupRootObserver = debounce(async () => {
+  setupMainContainerObserver();
   const $root = await getRoot();
   if (!$root) return;
-  const observer = new MutationObserver(setupHabitListObserver);
+  const observer = new MutationObserver(() => setupMainContainerObserver());
   observer.observe($root, { childList: true });
-  setupMainContainerObserver();
 });
 
 const initialize = async () => {
-  await verifyTogglApiToken();
-  await verifyHabitifyApiToken();
-  await setupRootObserver();
+  try {
+    await verifyTogglApiToken();
+    await verifyHabitifyApiToken();
+    await setupRootObserver();
+  } catch (e) {
+    console.error(e);
+  }
 };
 
 void initialize();
