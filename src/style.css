@@ -21,17 +21,7 @@
   height: 14px;
 }
 
-.css-515xy0 {
-  margin-left: 0;
-}
-
-.css-1ilzoee,
-.css-4r8v4y {
-  grid-template-areas: "name togglButton smartAction otherAction";
-  grid-template-columns: 6fr auto auto auto;
-}
-
-.css-1xe4x7r {
-  grid-template-areas: "name togglButton otherAction";
-  grid-template-columns: 7fr auto auto;
+.item-habit-info {
+  grid-template-areas: "name togglButton smartAction otherAction" !important;
+  grid-template-columns: 6fr auto auto auto !important;
 }
