@@ -63,6 +63,21 @@ const getHabitElements = async () => {
   );
 };
 
+let pending = 0;
+const showNotification = (message: string) => {
+  const notification = document.querySelector("#toggl-notification");
+  if (!notification) return;
+  notification.textContent = message;
+  notification.classList.add("show");
+  pending++;
+  setTimeout(() => {
+    pending--;
+    if (pending === 0) {
+      notification.classList.remove("show");
+    }
+  }, 5000);
+};
+
 const createTogglButton = (onclick: (e: MouseEvent) => void) => {
   const button = document.createElement("button");
   button.type = "button";
@@ -83,7 +98,9 @@ const appendTogglButton = (item: HTMLElement) => {
         console.log("Failed to get habit or description: ", habit, description);
         return;
       }
-      startTimer(description, habit);
+      startTimer(description, habit).then(() => {
+        showNotification(description);
+      });
     }),
     item.querySelector(".css-0")?.nextSibling ?? null
   );
@@ -105,11 +122,18 @@ const setupRootObserver = debounce(async () => {
   observer.observe(root, { childList: true, subtree: true });
 });
 
+const setupNotification = () => {
+  const notification = document.createElement("div");
+  notification.id = "toggl-notification";
+  document.body.appendChild(notification);
+};
+
 const initialize = async () => {
   try {
     await verifyTogglApiToken();
     await verifyHabitifyApiToken();
     await setupRootObserver();
+    setupNotification();
   } catch (e) {
     console.error(e);
   }
